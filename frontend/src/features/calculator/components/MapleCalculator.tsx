@@ -28,6 +28,7 @@ const optimizerSchema = z.object({
   symbol_levels: z.array(z.number().min(0)).min(6).max(7),
   selected_boss: z.string().optional(),
   force_multiplier: z.number(),
+  extra_force: z.number().min(0, '추가 포스는 0 이상이어야 합니다'),
 });
 
 type OptimizerForm = z.infer<typeof optimizerSchema>;
@@ -42,6 +43,7 @@ export default function MapleCalculator() {
     arcane: [1, 1, 1, 1, 1, 1],
     authentic: [1, 1, 1]
   });
+  const [savedExtraForces, setSavedExtraForces] = useState<{arcane: number, authentic: number}>({arcane: 0, authentic: 0});
   const { toast } = useToast();
 
   // Character lookup query
@@ -67,6 +69,7 @@ export default function MapleCalculator() {
       symbol_levels: [1, 1, 1, 1, 1, 1],
       selected_boss: 'custom',
       force_multiplier: 1.0,
+      extra_force: 0,
     },
   });
 
@@ -75,15 +78,47 @@ export default function MapleCalculator() {
   const forceMultiplier = form.watch('force_multiplier');
   const currentForce = form.watch('current_force');
   const forceGoal = form.watch('force_goal');
+  const symbolLevels = form.watch('symbol_levels');
+  const extraForce = form.watch('extra_force');
+
+  // Calculate symbol force from symbol levels only
+  const calculateSymbolForce = React.useCallback((levels: number[], type: 'Arcane' | 'Authentic') => {
+    return levels.reduce((total, level) => {
+      if (type === 'Arcane') {
+        // 아케인심볼: 레벨이 0이 아닌 경우 기본 20 + (레벨 * 10)
+        return total + (level > 0 ? 20 + (level * 10) : 0);
+      } else {
+        // 어센틱심볼: 레벨 * 10
+        return total + (level * 10);
+      }
+    }, 0);
+  }, []);
+
+  // Calculate total force including extra force
+  const totalCurrentForce = React.useMemo(() => {
+    const symbolForce = calculateSymbolForce(symbolLevels, forceType);
+    return symbolForce + extraForce;
+  }, [calculateSymbolForce, symbolLevels, forceType, extraForce]);
+
+  // Sync current_force with calculated total force
+  React.useEffect(() => {
+    form.setValue('current_force', totalCurrentForce);
+  }, [totalCurrentForce, form]);
+
+  // Helper function to calculate extra force from API data
+  const calculateExtraForce = React.useCallback((totalForce: number, levels: number[], type: 'Arcane' | 'Authentic') => {
+    const symbolForce = calculateSymbolForce(levels, type);
+    return Math.max(0, totalForce - symbolForce);
+  }, [calculateSymbolForce]);
 
   // Calculate adjusted force values for current force
   const adjustedCurrentForce = React.useMemo(() => {
     if (forceType === 'Arcane') {
-      return Math.floor(currentForce * forceMultiplier);
+      return Math.floor(totalCurrentForce * forceMultiplier);
     } else {
-      return currentForce + forceMultiplier;
+      return totalCurrentForce + forceMultiplier;
     }
-  }, [forceType, currentForce, forceMultiplier]);
+  }, [forceType, totalCurrentForce, forceMultiplier]);
 
   // Calculate adjusted force goal (base goal * multiplier)
   const adjustedForceGoal = React.useMemo(() => {
@@ -153,6 +188,18 @@ export default function MapleCalculator() {
       const arcaneSymbols = characterQueryData.data.symbol_info.arcane_symbols.map(symbol => symbol.level);
       const authenticSymbols = characterQueryData.data.symbol_info.authentic_symbols.map(symbol => symbol.level);
 
+      // Calculate extra forces from API data
+      const arcaneExtra = calculateExtraForce(
+        characterQueryData.data.force_info.arcane_force,
+        arcaneSymbols.slice(0, SYMBOL_CONFIG.ARCANE.COUNT),
+        'Arcane'
+      );
+      const authenticExtra = calculateExtraForce(
+        characterQueryData.data.force_info.authentic_force,
+        authenticSymbols.slice(0, SYMBOL_CONFIG.AUTHENTIC.COUNT),
+        'Authentic'
+      );
+
       // Save force values and symbol levels from character data
       setSavedForces({
         arcane: characterQueryData.data.force_info.arcane_force,
@@ -164,15 +211,22 @@ export default function MapleCalculator() {
         authentic: authenticSymbols.slice(0, SYMBOL_CONFIG.AUTHENTIC.COUNT)
       });
 
+      setSavedExtraForces({
+        arcane: arcaneExtra,
+        authentic: authenticExtra
+      });
+
       if (arcaneSymbols.length > 0) {
         form.setValue('force_type', 'Arcane');
         form.setValue('current_force', characterQueryData.data.force_info.arcane_force);
         form.setValue('symbol_levels', arcaneSymbols.slice(0, SYMBOL_CONFIG.ARCANE.COUNT));
+        form.setValue('extra_force', arcaneExtra);
         form.setValue('char_level', characterQueryData.data.basic_info.level);
       } else if (authenticSymbols.length > 0) {
         form.setValue('force_type', 'Authentic');
         form.setValue('current_force', characterQueryData.data.force_info.authentic_force);
         form.setValue('symbol_levels', authenticSymbols.slice(0, SYMBOL_CONFIG.AUTHENTIC.COUNT));
+        form.setValue('extra_force', authenticExtra);
         form.setValue('char_level', characterQueryData.data.basic_info.level);
       }
     }
@@ -195,24 +249,29 @@ export default function MapleCalculator() {
       // Load saved arcane data or use defaults
       form.setValue('current_force', savedForces.arcane);
       form.setValue('symbol_levels', savedSymbolLevels.arcane);
+      form.setValue('extra_force', savedExtraForces.arcane);
     } else if (forceType === 'Authentic') {
       // Load saved authentic data or use defaults
       form.setValue('current_force', savedForces.authentic);
       form.setValue('symbol_levels', savedSymbolLevels.authentic);
+      form.setValue('extra_force', savedExtraForces.authentic);
     }
-  }, [forceType, form]);
+  }, [forceType, form, savedForces, savedSymbolLevels, savedExtraForces]);
 
   // Helper function to save current form values to state
   const saveCurrentValues = React.useCallback(() => {
     const currentForce = form.getValues('current_force');
     const currentLevels = form.getValues('symbol_levels');
+    const currentExtraForce = form.getValues('extra_force');
 
     if (forceType === 'Arcane') {
       setSavedForces(prev => ({ ...prev, arcane: currentForce }));
       setSavedSymbolLevels(prev => ({ ...prev, arcane: currentLevels }));
+      setSavedExtraForces(prev => ({ ...prev, arcane: currentExtraForce }));
     } else if (forceType === 'Authentic') {
       setSavedForces(prev => ({ ...prev, authentic: currentForce }));
       setSavedSymbolLevels(prev => ({ ...prev, authentic: currentLevels }));
+      setSavedExtraForces(prev => ({ ...prev, authentic: currentExtraForce }));
     }
   }, [forceType, form]);
 
@@ -224,10 +283,11 @@ export default function MapleCalculator() {
   }, [saveCurrentValues]);
 
   const onSubmitOptimization = (data: OptimizerForm) => {
-    // Use adjusted force goal instead of raw force goal
+    // Use adjusted force goal and calculated current force
     const adjustedData = {
       ...data,
       force_goal: adjustedForceGoal,
+      current_force: totalCurrentForce, // Use calculated force instead of form value
     };
     optimizeMutation.mutate(adjustedData as ForceOptimizeRequest);
   };
@@ -401,16 +461,21 @@ export default function MapleCalculator() {
                     name="current_force"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-base font-semibold">현재 포스</FormLabel>
+                        <FormLabel className="text-base font-semibold">현재 포스 (자동 계산)</FormLabel>
                         <FormControl>
                           <Input
                             type="number"
                             placeholder="0"
-                            className="h-12"
+                            className="h-12 bg-gray-100 cursor-not-allowed"
+                            disabled
+                            readOnly
                             {...field}
-                            onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                            value={totalCurrentForce}
                           />
                         </FormControl>
+                        <div className="text-sm text-gray-500 mt-1">
+                          심볼 포스와 추가 포스의 합으로 자동 계산됩니다
+                        </div>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -563,17 +628,62 @@ export default function MapleCalculator() {
                       })}
                     </div>
                     
-                    <div className="mt-6 pt-4 border-t border-gray-200 flex justify-between items-center">
-                      <span className="text-sm text-gray-600">
-                        총 {forceType === 'Arcane' ? '아케인' : '어센틱'}포스:
-                      </span>
-                      <div className="flex flex-col items-end">
-                        <span className={`font-bold text-lg ${
-                          forceType === 'Arcane' ? 'text-purple-600' : 'text-blue-600'
-                        }`}>
-                          {currentForce.toLocaleString()}
+                    <div className="mt-6 pt-4 border-t border-gray-200 space-y-4">
+                      {/* Extra Force Input */}
+                      <FormField
+                        control={form.control}
+                        name="extra_force"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-sm font-medium">
+                              추가 포스 (심볼 외 수단)
+                            </FormLabel>
+                            <FormControl>
+                              <Input
+                                type="number"
+                                min="0"
+                                className="h-10"
+                                placeholder="0"
+                                {...field}
+                                onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      {/* Force Summary */}
+                      <div className="grid grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg">
+                        <div>
+                          <div className="text-sm text-gray-600">심볼 포스</div>
+                          <div className={`font-bold ${
+                            forceType === 'Arcane' ? 'text-purple-600' : 'text-blue-600'
+                          }`}>
+                            {calculateSymbolForce(symbolLevels, forceType).toLocaleString()}
+                          </div>
+                        </div>
+                        <div>
+                          <div className="text-sm text-gray-600">추가 포스</div>
+                          <div className={`font-bold ${
+                            forceType === 'Arcane' ? 'text-purple-600' : 'text-blue-600'
+                          }`}>
+                            {extraForce.toLocaleString()}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-gray-600">
+                          총 {forceType === 'Arcane' ? '아케인' : '어센틱'}포스:
                         </span>
-                  
+                        <div className="flex flex-col items-end">
+                          <span className={`font-bold text-lg ${
+                            forceType === 'Arcane' ? 'text-purple-600' : 'text-blue-600'
+                          }`}>
+                            {totalCurrentForce.toLocaleString()}
+                          </span>
+                        </div>
                       </div>
                     </div>
                   </CardContent>
