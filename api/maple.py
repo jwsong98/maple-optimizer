@@ -1,15 +1,12 @@
 import os
-import json
 import requests
 from datetime import datetime, date, timedelta
 from typing import List, Optional, Union
 from pydantic import BaseModel, Field, ValidationError
-from pathlib import Path
 from urllib.parse import quote
 
 from dotenv import load_dotenv, find_dotenv
-
-from .logger import logger, log_api_data, log_pydantic_error, log_api_call, log_cache_usage
+from .logger import logger, log_api_data, log_pydantic_error, log_api_call
 
 load_dotenv(find_dotenv())
 
@@ -102,10 +99,6 @@ class MapleStoryAPI:
         if not self.api_key:
             raise ValueError("API key is required. Set MAPLE_API_KEY environment variable or pass api_key parameter.")
 
-        # Create result directory if it doesn't exist
-        self.result_dir = Path("result")
-        self.result_dir.mkdir(exist_ok=True)
-
     def _make_request(self, endpoint: str, params: dict = None) -> dict:
         """Make HTTP request to MapleStory API"""
         url = f"{self.BASE_URL}{endpoint}"
@@ -145,23 +138,6 @@ class MapleStoryAPI:
             logger.error(f"❌ API 요청 실패 ({endpoint}): {e}")
             return error_data
 
-    def _load_cached_result(self, filename: str) -> Optional[dict]:
-        """Load cached API response from result folder"""
-        filepath = self.result_dir / filename
-        if filepath.exists():
-            try:
-                with open(filepath, 'r', encoding='utf-8') as f:
-                    return json.load(f)
-            except (json.JSONDecodeError, IOError):
-                # 캐시 파일이 손상되었거나 읽을 수 없으면 None 반환
-                return None
-        return None
-
-    def _save_result(self, filename: str, data: dict) -> None:
-        """Save API response to result folder"""
-        filepath = self.result_dir / filename
-        with open(filepath, 'w', encoding='utf-8') as f:
-            json.dump(data, f, ensure_ascii=False, indent=2, default=str)
 
     def get_character_ocid(self, character_name: str) -> OcidResponse:
         """
@@ -173,28 +149,10 @@ class MapleStoryAPI:
         Returns:
             OcidResponse: 캐릭터 OCID 정보
         """
-        filename = f"ocid_{character_name}.json"
-
-        # 캐싱된 결과 확인
-        cached_data = self._load_cached_result(filename)
-        if cached_data is not None:
-            log_cache_usage(filename, True)
-            if "error" in cached_data:
-                raise ValueError(f"API Error: {cached_data['error']['message']}")
-            
-            try:
-                return OcidResponse(**cached_data)
-            except ValidationError as e:
-                log_pydantic_error(e, cached_data, "OcidResponse")
-                raise ValueError(f"캐싱된 데이터 검증 실패: {e}")
-
-        # 캐싱된 데이터가 없으면 API 호출
-        log_cache_usage(filename, False)
         endpoint = "/id"
         params = {"character_name": character_name}
 
         response_data = self._make_request(endpoint, params)
-        self._save_result(filename, response_data)
 
         if "error" in response_data:
             raise ValueError(f"API Error: {response_data['error']['message']}")
@@ -211,34 +169,14 @@ class MapleStoryAPI:
 
         Args:
             ocid: 캐릭터 식별자
-            query_date: 조회 기준일 (KST, YYYY-MM-DD). 기본값은 오늘 날짜
 
         Returns:
             SymbolEquipmentResponse: 심볼 장비 정보
         """
-
-        filename = f"symbol_equipment_{ocid}.json"
-
-        # 캐싱된 결과 확인
-        cached_data = self._load_cached_result(filename)
-        if cached_data is not None:
-            log_cache_usage(filename, True)
-            if "error" in cached_data:
-                raise ValueError(f"API Error: {cached_data['error']['message']}")
-            
-            try:
-                return SymbolEquipmentResponse(**cached_data)
-            except ValidationError as e:
-                log_pydantic_error(e, cached_data, "SymbolEquipmentResponse")
-                raise ValueError(f"캐싱된 심볼 데이터 검증 실패: {e}")
-
-        # 캐싱된 데이터가 없으면 API 호출
-        log_cache_usage(filename, False)
         endpoint = "/character/symbol-equipment"
         params = {"ocid": ocid}
 
         response_data = self._make_request(endpoint, params)
-        self._save_result(filename, response_data)
 
         if "error" in response_data:
             raise ValueError(f"API Error: {response_data['error']['message']}")
@@ -259,28 +197,10 @@ class MapleStoryAPI:
         Returns:
             CharacterBasic: 캐릭터 기본 정보
         """
-        filename = f"character_basic_{ocid}.json"
-
-        # 캐싱된 결과 확인
-        cached_data = self._load_cached_result(filename)
-        if cached_data is not None:
-            log_cache_usage(filename, True)
-            if "error" in cached_data:
-                raise ValueError(f"API Error: {cached_data['error']['message']}")
-            
-            try:
-                return CharacterBasic(**cached_data)
-            except ValidationError as e:
-                log_pydantic_error(e, cached_data, "CharacterBasic")
-                raise ValueError(f"캐싱된 기본 정보 검증 실패: {e}")
-
-        # 캐싱된 데이터가 없으면 API 호출
-        log_cache_usage(filename, False)
         endpoint = "/character/basic"
         params = {"ocid": ocid}
 
         response_data = self._make_request(endpoint, params)
-        self._save_result(filename, response_data)
 
         if "error" in response_data:
             raise ValueError(f"API Error: {response_data['error']['message']}")
@@ -301,35 +221,10 @@ class MapleStoryAPI:
         Returns:
             CharacterStatResponse: 종합 능력치 정보
         """
-    
-        filename = f"character_stat_{ocid}.json"
-
-        # 캐싱된 결과 확인
-        cached_data = self._load_cached_result(filename)
-        if cached_data is not None:
-            log_cache_usage(filename, True)
-            if "error" in cached_data:
-                raise ValueError(f"API Error: {cached_data['error']['message']}")
-            
-            try:
-                return CharacterStatResponse(**cached_data)
-            except ValidationError as e:
-                log_pydantic_error(e, cached_data, "CharacterStatResponse")
-                # 상세한 final_stat 필드 검사
-                if "final_stat" in cached_data and isinstance(cached_data["final_stat"], list):
-                    logger.debug("🔍 final_stat 항목별 검사:")
-                    for i, stat in enumerate(cached_data["final_stat"]):
-                        if isinstance(stat, dict):
-                            logger.debug(f"  [{i}] {stat.get('stat_name', 'Unknown')}: {stat.get('stat_value', 'None')} (타입: {type(stat.get('stat_value', None)).__name__})")
-                raise ValueError(f"캐싱된 능력치 데이터 검증 실패: {e}")
-
-        # 캐싱된 데이터가 없으면 API 호출
-        log_cache_usage(filename, False)
         endpoint = "/character/stat"
         params = {"ocid": ocid}
 
         response_data = self._make_request(endpoint, params)
-        self._save_result(filename, response_data)
 
         if "error" in response_data:
             raise ValueError(f"API Error: {response_data['error']['message']}")
