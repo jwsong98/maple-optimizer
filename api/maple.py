@@ -7,9 +7,9 @@ from pydantic import BaseModel, Field, ValidationError
 from pathlib import Path
 from urllib.parse import quote
 
-from dotenv import load_dotenv
-from dotenv import find_dotenv
-from logger import logger, log_api_data, log_pydantic_error, log_api_call, log_cache_usage
+from dotenv import load_dotenv, find_dotenv
+
+from .logger import logger, log_api_data, log_pydantic_error, log_api_call, log_cache_usage
 
 load_dotenv(find_dotenv())
 
