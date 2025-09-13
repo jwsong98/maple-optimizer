@@ -69,26 +69,6 @@ async def get_character_symbols(character_name: str):
         )
 
 
-@app.post("/api/debug/level")
-async def set_log_level(level: str):
-    """
-    디버그 로그 레벨을 동적으로 변경합니다.
-    
-    Args:
-        level: 로그 레벨 (DEBUG, INFO, WARNING, ERROR, CRITICAL)
-    
-    Returns:
-        현재 설정된 로그 레벨
-    """
-    try:
-        set_debug_level(level)
-        return {"message": f"디버그 레벨이 {level.upper()}로 변경되었습니다"}
-    except Exception as e:
-        raise HTTPException(
-            status_code=400,
-            detail=f"잘못된 로그 레벨: {level}"
-        )
-
 
 @app.post("/api/optimize/force", response_model=ForceOptimizeResponse)
 async def optimize_force(request: ForceOptimizeRequest):
@@ -138,25 +118,4 @@ async def optimize_force(request: ForceOptimizeRequest):
         raise HTTPException(
             status_code=500,
             detail=f"서버 오류: {str(e)}"
-        )
-
-
-@app.post("/api/debug/level")
-async def set_log_level(level: str):
-    """
-    디버그 로그 레벨을 동적으로 변경합니다.
-    
-    Args:
-        level: 로그 레벨 (DEBUG, INFO, WARNING, ERROR, CRITICAL)
-    
-    Returns:
-        현재 설정된 로그 레벨
-    """
-    try:
-        set_debug_level(level)
-        return {"message": f"디버그 레벨이 {level.upper()}로 변경되었습니다"}
-    except Exception as e:
-        raise HTTPException(
-            status_code=400,
-            detail=f"잘못된 로그 레벨: {level}"
         )
