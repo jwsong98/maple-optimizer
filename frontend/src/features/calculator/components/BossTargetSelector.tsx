@@ -39,12 +39,21 @@ export function BossTargetSelector({
     getCalculation,
   } = useBossTargetSelector();
 
-  // 외부에서 포스 타입이 주입되면 동기화
+  // 외부에서 포스 타입이 주입되면 동기화 (목표 포스가 이미 설정된 경우 보존)
   React.useEffect(() => {
     if (externalForceType && forceType !== externalForceType) {
-      setForceType(externalForceType);
+      // 현재 목표 포스가 설정되어 있고 값이 0보다 큰 경우 보존
+      const hasValidTargetForce = targetForce && targetForce > 0;
+      
+      if (hasValidTargetForce) {
+        // 포스 타입만 변경하고 기존 선택사항들은 유지하지 않음 (다른 포스 타입의 보스이므로)
+        // 하지만 target force는 form level에서 복원될 예정
+        setForceType(externalForceType);
+      } else {
+        setForceType(externalForceType);
+      }
     }
-  }, [externalForceType, forceType, setForceType]);
+  }, [externalForceType, forceType, setForceType, targetForce]);
 
   // 계산 결과가 변경되면 외부로 알림
   React.useEffect(() => {

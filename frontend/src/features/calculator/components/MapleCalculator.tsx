@@ -46,6 +46,7 @@ export default function MapleCalculator() {
   });
   const [savedExtraForces, setSavedExtraForces] = useState<{arcane: number, authentic: number}>({arcane: 0, authentic: 0});
   const [bossTargetCalculation, setBossTargetCalculation] = useState<BossTargetCalculation | null>(null);
+  const [savedBossTargetCalculation, setSavedBossTargetCalculation] = useState<BossTargetCalculation | null>(null);
   const { toast } = useToast();
 
   // Character lookup query
@@ -74,7 +75,6 @@ export default function MapleCalculator() {
   });
 
   const forceType = form.watch('force_type');
-  const forceGoal = form.watch('force_goal');
   const symbolLevels = form.watch('symbol_levels');
   const extraForce = form.watch('extra_force');
 
@@ -147,6 +147,12 @@ export default function MapleCalculator() {
       });
       return;
     }
+    
+    // Save current boss target calculation before character lookup
+    if (bossTargetCalculation?.targetForce && bossTargetCalculation.targetForce > 0) {
+      setSavedBossTargetCalculation(bossTargetCalculation);
+    }
+    
     setSearchedName(characterName.trim());
   };
 
@@ -206,8 +212,14 @@ export default function MapleCalculator() {
         form.setValue('extra_force', authenticExtra);
         form.setValue('char_level', characterQueryData.data.basic_info.level);
       }
+
+      // Restore saved boss target calculation after character data loads
+      if (savedBossTargetCalculation?.targetForce && savedBossTargetCalculation.targetForce > 0) {
+        // Set the target force back
+        form.setValue('force_goal', savedBossTargetCalculation.targetForce);
+      }
     }
-  }, [characterQueryData, form]);
+  }, [characterQueryData, form, calculateExtraForce, savedBossTargetCalculation]);
 
   // Handle character error
   React.useEffect(() => {
@@ -233,11 +245,16 @@ export default function MapleCalculator() {
       form.setValue('symbol_levels', savedSymbolLevels.authentic);
       form.setValue('extra_force', savedExtraForces.authentic);
     }
-    // Reset goal when force family changes to require boss re-selection
-    if (form.getValues('force_goal') !== 0) {
+    
+    // Reset goal when force family changes, but preserve if character data is being loaded
+    const shouldResetGoal = form.getValues('force_goal') !== 0 && 
+                           !savedBossTargetCalculation && 
+                           !isCharacterLoading;
+    
+    if (shouldResetGoal) {
       form.setValue('force_goal', 0);
     }
-  }, [forceType, form, savedForces, savedSymbolLevels, savedExtraForces]);
+  }, [forceType, form, savedForces, savedSymbolLevels, savedExtraForces, savedBossTargetCalculation, isCharacterLoading]);
 
   // Helper function to save current form values to state
   const saveCurrentValues = React.useCallback(() => {
