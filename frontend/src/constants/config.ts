@@ -21,7 +21,7 @@ export const SYMBOL_CONFIG = {
     ],
   },
   AUTHENTIC: {
-    COUNT: 3,
+    COUNT: 7,
     MAX_LEVEL: 11,
     NAMES: [
       '세르니움',
