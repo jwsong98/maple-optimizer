@@ -17,14 +17,15 @@ import { Calculator, TrendingUp, Coins, Target, ArrowRight, Zap, Shield } from '
 import { useToast } from '@/hooks/use-toast';
 import { optimizeForce } from '@/remote/api';
 import { ForceOptimizeRequest, ForceOptimizeResponse, ForceType, CharacterSymbolInfo } from '@/lib/types';
-import { SYMBOL_CONFIG } from '@/constants/config';
+import { SYMBOL_CONFIG, BOSS_TARGETS } from '@/constants/config';
 
 const optimizerSchema = z.object({
   force_type: z.enum(['Arcane', 'Authentic']),
   force_goal: z.number().min(1, '목표 포스는 1 이상이어야 합니다'),
-  char_level: z.number().min(200, '캐릭터 레벨은 200 이상이어야 합니다'),
+  char_level: z.number().min(1, '캐릭터 레벨은 200 이상이어야 합니다'),
   current_force: z.number().min(0, '현재 포스는 0 이상이어야 합니다'),
   symbol_levels: z.array(z.number().min(0)).min(6).max(7),
+  selected_boss: z.string().optional(),
 });
 
 type OptimizerForm = z.infer<typeof optimizerSchema>;
@@ -39,7 +40,7 @@ export default function ForceOptimizer({ characterData }: ForceOptimizerProps) {
   const [savedForces, setSavedForces] = useState<{arcane: number, authentic: number}>({arcane: 0, authentic: 0});
   const [savedSymbolLevels, setSavedSymbolLevels] = useState<{arcane: number[], authentic: number[]}>({
     arcane: [1, 1, 1, 1, 1, 1],
-    authentic: [1, 1, 1]
+    authentic: [1, 1, 1, 1, 1, 1, 1]
   });
   const { toast } = useToast();
 
@@ -51,6 +52,7 @@ export default function ForceOptimizer({ characterData }: ForceOptimizerProps) {
       char_level: 275,
       current_force: 0,
       symbol_levels: [1, 1, 1, 1, 1, 1],
+      selected_boss: undefined,
     },
   });
 
@@ -117,6 +119,9 @@ export default function ForceOptimizer({ characterData }: ForceOptimizerProps) {
       form.setValue('current_force', savedForces.authentic);
       form.setValue('symbol_levels', savedSymbolLevels.authentic);
     }
+    // Reset boss and goal when switching families
+    form.setValue('selected_boss', undefined);
+    form.setValue('force_goal', 0);
   }, [forceType, form, savedForces, savedSymbolLevels]);
 
   // Save current values when they change
@@ -158,6 +163,42 @@ export default function ForceOptimizer({ characterData }: ForceOptimizerProps) {
               {/* Basic Settings */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                 <div className="space-y-4">
+                  {/* Boss Selector: filters by force type and sets goal */}
+                  <FormField
+                    control={form.control}
+                    name="selected_boss"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-base font-semibold">보스 선택</FormLabel>
+                        <Select
+                          value={field.value ?? ''}
+                          onValueChange={(val) => {
+                            field.onChange(val);
+                            const list = forceType === 'Arcane' ? BOSS_TARGETS.ARCANE : BOSS_TARGETS.AUTHENTIC;
+                            const found = list.find((b) => b.name === val);
+                            form.setValue('force_goal', found ? found.target : 0);
+                          }}
+                        >
+                          <FormControl>
+                            <SelectTrigger className="h-12">
+                              <SelectValue placeholder="보스를 선택하세요" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {(forceType === 'Arcane' ? BOSS_TARGETS.ARCANE : BOSS_TARGETS.AUTHENTIC).map((b) => (
+                              <SelectItem key={b.name} value={b.name}>
+                                {b.name} ({b.target} 포스)
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormDescription>
+                          보스를 선택하면 목표 포스가 자동으로 설정됩니다.
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                   <FormField
                     control={form.control}
                     name="force_type"
@@ -192,6 +233,7 @@ export default function ForceOptimizer({ characterData }: ForceOptimizerProps) {
                             placeholder="275"
                             className="h-12"
                             {...field}
+                            value={field.value ?? 200}
                             onChange={(e) => field.onChange(parseInt(e.target.value) || 200)}
                           />
                         </FormControl>
@@ -214,6 +256,7 @@ export default function ForceOptimizer({ characterData }: ForceOptimizerProps) {
                             placeholder="1500"
                             className="h-12"
                             {...field}
+                            value={field.value ?? 0}
                             onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
                           />
                         </FormControl>
@@ -234,6 +277,7 @@ export default function ForceOptimizer({ characterData }: ForceOptimizerProps) {
                             placeholder="0"
                             className="h-12"
                             {...field}
+                            value={field.value ?? 0}
                             onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
                           />
                         </FormControl>
@@ -257,7 +301,7 @@ export default function ForceOptimizer({ characterData }: ForceOptimizerProps) {
                 
                 <Card className={forceType === 'Arcane' ? 'border-purple-200 bg-purple-50' : 'border-blue-200 bg-blue-50'}>
                   <CardContent className="p-6">
-                    <div className={`grid gap-4 ${forceType === 'Arcane' ? 'grid-cols-2 md:grid-cols-3 lg:grid-cols-6' : 'grid-cols-2 md:grid-cols-3 lg:grid-cols-7'}`}>
+                    <div className={`grid gap-4 ${forceType === 'Arcane' ? 'grid-cols-2 md:grid-cols-3 lg:grid-cols-6' : 'grid-cols-2 md:grid-cols-7 lg:grid-cols-7'}`}>
                       {symbolNames.map((symbolName, index) => (
                         <FormField
                           key={symbolName}

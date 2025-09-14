@@ -43,16 +43,3 @@ export const BOSS_LIST: BossInfo[] = [
   { name: '발드릭스', difficulty: 'NORMAL', forceType: 'Authentic', requiredForce: 700 },
   { name: '발드릭스', difficulty: 'HARD', forceType: 'Authentic', requiredForce: 700 },
 ];
-
-export const FORCE_MULTIPLIERS = {
-  Arcane: [
-    { label: '1.0배', value: 1.0 },
-    { label: '1.1배', value: 1.1 },
-    { label: '1.3배', value: 1.3 },
-    { label: '1.5배', value: 1.5 },
-  ],
-  Authentic: Array.from({ length: 51 }, (_, i) => ({
-    label: `+${i}`,
-    value: i,
-  })),
-};

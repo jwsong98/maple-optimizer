@@ -18,7 +18,10 @@ import { useToast } from '@/hooks/use-toast';
 import { getCharacterSymbols, optimizeForce } from '@/remote/api';
 import { CharacterSymbolInfo, SymbolItem, ForceOptimizeRequest, ForceOptimizeResponse } from '@/lib/types';
 import { SYMBOL_NAME_MAP, SYMBOL_ICON_MAP, SYMBOL_CONFIG } from '@/constants/config';
-import { BOSS_LIST, FORCE_MULTIPLIERS, BossInfo } from '@/constants/bosses';
+import { ForceSelector } from './ForceSelector';
+import { BossTargetCalculation } from '../hooks/useBossTargetSelector';
+
+
 
 const optimizerSchema = z.object({
   force_type: z.enum(['Arcane', 'Authentic']),
@@ -26,8 +29,6 @@ const optimizerSchema = z.object({
   char_level: z.number().min(200, '캐릭터 레벨은 200 이상이어야 합니다'),
   current_force: z.number().min(0, '현재 포스는 0 이상이어야 합니다'),
   symbol_levels: z.array(z.number().min(0)).min(6).max(7),
-  selected_boss: z.string().optional(),
-  force_multiplier: z.number(),
   extra_force: z.number().min(0, '추가 포스는 0 이상이어야 합니다'),
 });
 
@@ -41,9 +42,10 @@ export default function MapleCalculator() {
   const [savedForces, setSavedForces] = useState<{arcane: number, authentic: number}>({arcane: 0, authentic: 0});
   const [savedSymbolLevels, setSavedSymbolLevels] = useState<{arcane: number[], authentic: number[]}>({
     arcane: [1, 1, 1, 1, 1, 1],
-    authentic: [1, 1, 1]
+    authentic: [1, 1, 1, 1, 1, 1, 1]
   });
   const [savedExtraForces, setSavedExtraForces] = useState<{arcane: number, authentic: number}>({arcane: 0, authentic: 0});
+  const [bossTargetCalculation, setBossTargetCalculation] = useState<BossTargetCalculation | null>(null);
   const { toast } = useToast();
 
   // Character lookup query
@@ -63,20 +65,15 @@ export default function MapleCalculator() {
     resolver: zodResolver(optimizerSchema),
     defaultValues: {
       force_type: 'Arcane',
-      force_goal: 1500,
+      force_goal: 0,
       char_level: 275,
       current_force: 0,
       symbol_levels: [1, 1, 1, 1, 1, 1],
-      selected_boss: 'custom',
-      force_multiplier: 1.0,
       extra_force: 0,
     },
   });
 
   const forceType = form.watch('force_type');
-  const selectedBoss = form.watch('selected_boss');
-  const forceMultiplier = form.watch('force_multiplier');
-  const currentForce = form.watch('current_force');
   const forceGoal = form.watch('force_goal');
   const symbolLevels = form.watch('symbol_levels');
   const extraForce = form.watch('extra_force');
@@ -111,35 +108,15 @@ export default function MapleCalculator() {
     return Math.max(0, totalForce - symbolForce);
   }, [calculateSymbolForce]);
 
-  // Calculate adjusted force values for current force
-  const adjustedCurrentForce = React.useMemo(() => {
-    if (forceType === 'Arcane') {
-      return Math.floor(totalCurrentForce * forceMultiplier);
-    } else {
-      return totalCurrentForce + forceMultiplier;
+  // Handle boss target calculation changes
+  const handleBossTargetCalculationChange = React.useCallback((calculation: BossTargetCalculation) => {
+    setBossTargetCalculation(calculation);
+    
+    // Update form values when target force calculation changes
+    if (calculation.targetForce && calculation.targetForce > 0) {
+      form.setValue('force_goal', calculation.targetForce);
     }
-  }, [forceType, totalCurrentForce, forceMultiplier]);
-
-  // Calculate adjusted force goal (base goal * multiplier)
-  const adjustedForceGoal = React.useMemo(() => {
-    if (forceType === 'Arcane') {
-      return Math.floor(forceGoal * forceMultiplier);
-    } else {
-      return forceGoal + forceMultiplier;
-    }
-  }, [forceType, forceGoal, forceMultiplier]);
-
-  // Update force goal when boss is selected
-  React.useEffect(() => {
-    if (selectedBoss && selectedBoss !== 'custom') {
-      const [difficulty, ...nameParts] = selectedBoss.split('_');
-      const bossName = nameParts.join('_');
-      const boss = BOSS_LIST.find(b => b.difficulty === difficulty && b.name === bossName);
-      if (boss) {
-        form.setValue('force_goal', boss.requiredForce);
-      }
-    }
-  }, [selectedBoss, form]);
+  }, [form]);
 
   // Optimization mutation
   const optimizeMutation = useMutation({
@@ -256,6 +233,10 @@ export default function MapleCalculator() {
       form.setValue('symbol_levels', savedSymbolLevels.authentic);
       form.setValue('extra_force', savedExtraForces.authentic);
     }
+    // Reset goal when force family changes to require boss re-selection
+    if (form.getValues('force_goal') !== 0) {
+      form.setValue('force_goal', 0);
+    }
   }, [forceType, form, savedForces, savedSymbolLevels, savedExtraForces]);
 
   // Helper function to save current form values to state
@@ -283,11 +264,20 @@ export default function MapleCalculator() {
   }, [saveCurrentValues]);
 
   const onSubmitOptimization = (data: OptimizerForm) => {
-    // Use adjusted force goal and calculated current force
+    if (!bossTargetCalculation?.targetForce || bossTargetCalculation.targetForce <= 0) {
+      toast({
+        title: "오류",
+        description: "목표 포스를 설정해주세요.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Use boss target calculation data
     const adjustedData = {
       ...data,
-      force_goal: adjustedForceGoal,
-      current_force: totalCurrentForce, // Use calculated force instead of form value
+      force_goal: bossTargetCalculation.targetForce,
+      current_force: totalCurrentForce,
     };
     optimizeMutation.mutate(adjustedData as ForceOptimizeRequest);
   };
@@ -393,7 +383,7 @@ export default function MapleCalculator() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel className="text-base font-semibold">포스 타입</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
+                        <Select onValueChange={field.onChange} value={field.value ?? 'Arcane'}>
                           <FormControl>
                             <SelectTrigger className="h-12">
                               <SelectValue placeholder="포스 타입 선택" />
@@ -421,6 +411,7 @@ export default function MapleCalculator() {
                             placeholder="275"
                             className="h-12"
                             {...field}
+                            value={field.value ?? 200}
                             onChange={(e) => field.onChange(parseInt(e.target.value) || 200)}
                           />
                         </FormControl>
@@ -431,29 +422,9 @@ export default function MapleCalculator() {
                 </div>
 
                 <div className="space-y-4">
-                  <FormField
-                    control={form.control}
-                    name="force_goal"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-base font-semibold">목표 포스</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="number"
-                            placeholder="1500"
-                            className="h-12"
-                            {...field}
-                            onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
-                          />
-                        </FormControl>
-                        {adjustedForceGoal !== forceGoal && (
-                          <div className="text-sm text-gray-600 mt-1">
-                            조정된 목표 포스: {adjustedForceGoal.toLocaleString()}
-                          </div>
-                        )}
-                        <FormMessage />
-                      </FormItem>
-                    )}
+                  <ForceSelector 
+                    forceTypeFromForm={forceType} 
+                    onTargetForceChange={handleBossTargetCalculationChange}
                   />
 
                   <FormField
@@ -481,74 +452,9 @@ export default function MapleCalculator() {
                     )}
                   />
 
-                  <FormField
-                    control={form.control}
-                    name="force_multiplier"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-base font-semibold">
-                          {forceType === 'Arcane' ? '아케인포스 배율' : '어센틱포스 추가'}
-                        </FormLabel>
-                        <Select
-                          onValueChange={(value) => field.onChange(parseFloat(value))}
-                          value={field.value.toString()}
-                        >
-                          <FormControl>
-                            <SelectTrigger className="h-12">
-                              <SelectValue placeholder={forceType === 'Arcane' ? '배율 선택' : '추가 수치 선택'} />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {FORCE_MULTIPLIERS[forceType].map((multiplier) => (
-                              <SelectItem key={multiplier.value} value={multiplier.value.toString()}>
-                                {multiplier.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
                 </div>
               </div>
 
-              {/* Boss Selection */}
-              <div className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="selected_boss"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-base font-semibold">보스 선택</FormLabel>
-                      <Select
-                        onValueChange={field.onChange}
-                        value={field.value}
-                      >
-                        <FormControl>
-                          <SelectTrigger className="h-12">
-                            <SelectValue placeholder="보스 선택" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="custom">직접 입력</SelectItem>
-                          {BOSS_LIST
-                            .filter(boss => boss.forceType === forceType)
-                            .map((boss) => (
-                              <SelectItem
-                                key={`${boss.difficulty}_${boss.name}`}
-                                value={`${boss.difficulty}_${boss.name}`}
-                              >
-                                {boss.difficulty} {boss.name} ({boss.requiredForce.toLocaleString()})
-                              </SelectItem>
-                            ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
 
               {/* Symbol Levels Section */}
               <div className="space-y-4">
@@ -609,6 +515,7 @@ export default function MapleCalculator() {
                                     className="h-10 text-center font-medium"
                                     placeholder="레벨"
                                     {...field}
+                                    value={field.value ?? 0}
                                     onChange={(e) => {
                                       const value = parseInt(e.target.value) || 0;
                                       const newLevels = [...form.getValues('symbol_levels')];
@@ -645,6 +552,7 @@ export default function MapleCalculator() {
                                 className="h-10"
                                 placeholder="0"
                                 {...field}
+                                value={field.value ?? 0}
                                 onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
                               />
                             </FormControl>
@@ -750,7 +658,7 @@ export default function MapleCalculator() {
                   <div className="text-2xl font-bold text-green-600">
                     {optimizationResult.upgrade_path.length > 0
                       ? optimizationResult.upgrade_path[optimizationResult.upgrade_path.length - 1].force.toLocaleString()
-                      : adjustedCurrentForce.toLocaleString()
+                      : totalCurrentForce.toLocaleString()
                     }
                   </div>
                 </CardContent>
@@ -769,7 +677,7 @@ export default function MapleCalculator() {
                         <span className="text-sm font-medium truncate">{symbolName}</span>
                         <div className="flex items-center gap-2">
                           <Badge variant="outline">
-                            Lv.{optimizationResult.initial_levels[index]} (현재: {adjustedCurrentForce.toLocaleString()})
+                            Lv.{optimizationResult.initial_levels[index]}
                           </Badge>
                           <ArrowRight className="w-3 h-3 text-gray-400" />
                           <Badge variant={

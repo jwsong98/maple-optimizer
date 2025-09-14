@@ -1,0 +1,15 @@
+보스이름	포스수치
+EASY 루시드	360
+NORMAL 루시드	360
+HARD 루시드	360
+EASY 윌	560
+NORMAL 윌	760
+HARD 윌	760
+NORMAL 더스크	730
+CHAOS 더스크	730
+NORMAL 진 힐라	820
+HARD 진 힐라	900
+NORMAL 듄켈	850
+HARD 듄켈	1380
+HARD 검은 마법사	1320
+EXTREME 검은 마법사	1320

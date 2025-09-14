@@ -26,7 +26,11 @@ export const SYMBOL_CONFIG = {
     NAMES: [
       '세르니움',
       '아르크스',
-      '오디움'
+      '오디움',
+      '도원경',
+      '아르테리아',
+      '카르시온',
+      '탈라하트',
     ],
   },
 } as const;
@@ -66,10 +70,51 @@ export const SYMBOL_ICON_MAP = {
   '어센틱심볼 : 도원경': 'https://open.api.nexon.com/static/maplestory/item/icon/KEIDIHOC',
   '어센틱심볼 : 아르테리아': 'https://open.api.nexon.com/static/maplestory/item/icon/KEIDIHOF',
   '어센틱심볼 : 카르시온': 'https://open.api.nexon.com/static/maplestory/item/icon/KEIDIHOE',
-  '그랜드 어센틱심볼 : 탈라하트': 'https://open.api.nexon.com/static/maplestory/item/icon/KEIDPHOB',
+  '어센틱심볼 : 탈라하트': 'https://open.api.nexon.com/static/maplestory/item/icon/KEIDPHOB',
   // // 추가 심볼들
   // '어센틱심볼 : 셀라스': 'https://open.api.nexon.com/static/maplestory/item/icon/KEIDIHOG',
   // '어센틱심볼 : 문브릿지': 'https://open.api.nexon.com/static/maplestory/item/icon/KEIDIHOH',
   // '어센틱심볼 : 고통의 미궁': 'https://open.api.nexon.com/static/maplestory/item/icon/KEIDIHOI',
   // '어센틱심볼 : 리멘': 'https://open.api.nexon.com/static/maplestory/item/icon/KEIDIHOJ',
+} as const;
+
+// Boss target force by family (from provided lists)
+export const BOSS_TARGETS = {
+  ARCANE: [
+    { name: 'EASY 루시드', target: 360 },
+    { name: 'NORMAL 루시드', target: 360 },
+    { name: 'HARD 루시드', target: 360 },
+    { name: 'EASY 윌', target: 560 },
+    { name: 'NORMAL 윌', target: 760 },
+    { name: 'HARD 윌', target: 760 },
+    { name: 'NORMAL 더스크', target: 730 },
+    { name: 'CHAOS 더스크', target: 730 },
+    { name: 'NORMAL 진 힐라', target: 820 },
+    { name: 'HARD 진 힐라', target: 900 },
+    { name: 'NORMAL 듄켈', target: 850 },
+    { name: 'HARD 듄켈', target: 1380 },
+    { name: 'HARD 검은 마법사', target: 1320 },
+    { name: 'EXTREME 검은 마법사', target: 1320 },
+  ],
+  AUTHENTIC: [
+    { name: 'NORMAL 세렌', target: 200 },
+    { name: 'HARD 세렌', target: 200 },
+    { name: 'EXTREME 세렌', target: 200 },
+    { name: 'EASY 칼로스', target: 200 },
+    { name: 'NORMAL 칼로스', target: 300 },
+    { name: 'CHAOS 칼로스', target: 330 },
+    { name: 'EXTREME 칼로스', target: 440 },
+    { name: 'EASY 최초의 대적자', target: 220 },
+    { name: 'NORMAL 최초의 대적자', target: 320 },
+    { name: 'HARD 최초의 대적자', target: 320 },
+    { name: 'EXTREME 최초의 대적자', target: 460 },
+    { name: 'EASY 카링', target: 230 },
+    { name: 'NORMAL 카링', target: 330 },
+    { name: 'HARD 카링', target: 350 },
+    { name: 'EXTREME 카링', target: 480 },
+    { name: 'NORMAL 림보', target: 500 },
+    { name: 'HARD 림보', target: 500 },
+    { name: 'NORMAL 발드릭스', target: 700 },
+    { name: 'HARD 발드릭스', target: 700 },
+  ],
 } as const;

@@ -2,10 +2,12 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 import datetime
+from dotenv import load_dotenv, find_dotenv
+from service import maple_service
+from models import ForceOptimizeRequest, ForceOptimizeResponse
+from logger import logger, set_debug_level
 
-from .service import maple_service
-from .models import ForceOptimizeRequest, ForceOptimizeResponse
-from .logger import logger, set_debug_level
+load_dotenv(find_dotenv())
 
 app = FastAPI(
     title="메이플스토리 계산기 API",

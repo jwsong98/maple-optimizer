@@ -1,0 +1,20 @@
+보스이름	포스수치
+NORMAL 세렌	200
+HARD 세렌	200
+EXTREME 세렌	200
+EASY 칼로스	200
+NORMAL 칼로스	300
+CHAOS 칼로스	330
+EXTREME 칼로스	440
+EASY 최초의 대적자	220
+NORMAL 최초의 대적자	320
+HARD 최초의 대적자	320
+EXTREME 최초의 대적자	460
+EASY 카링	230
+NORMAL 카링	330
+HARD 카링	350
+EXTREME 카링	480
+NORMAL 림보	500
+HARD 림보	500
+NORMAL 발드릭스	700
+HARD 발드릭스	700
