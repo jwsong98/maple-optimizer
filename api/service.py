@@ -1,7 +1,7 @@
 from typing import Dict, Optional, List, Tuple
 from datetime import date, timedelta
 from pathlib import Path
-from maple import MapleStoryAPI, get_character_ocid, get_character_symbol_equipment, get_character_stat
+from .maple import MapleStoryAPI, get_character_ocid, get_character_symbol_equipment, get_character_stat
 
 
 class MapleService:

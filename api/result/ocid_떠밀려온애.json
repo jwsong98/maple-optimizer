@@ -1,6 +1,0 @@
-{
-  "error": {
-    "name": "HTTPError",
-    "message": "400 Client Error: Bad Request for url: https://open.api.nexon.com/maplestory/v1/id?character_name=%EB%96%A0%EB%B0%80%EB%A0%A4%EC%98%A8%EC%95%A0"
-  }
-}
