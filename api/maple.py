@@ -112,8 +112,8 @@ class MapleStoryAPI:
             for key, value in params.items():
                 if isinstance(value, str):
                     # 한글 문자를 UTF-8로 명시적으로 인코딩
-                    encoded_value = quote(value, encoding='utf-8')
-                    query_params.append(f"{key}={encoded_value}")
+                    # encoded_value = quote(value, encoding='utf-8')
+                    query_params.append(f"{key}={value}")
                 else:
                     query_params.append(f"{key}={value}")
 
