@@ -305,7 +305,7 @@ export default function MapleCalculator() {
   return (
     <div className="space-y-8">
       {/* Character Search Section */}
-      <Card className="w-full max-w-2xl mx-auto">
+      <Card className="w-full max-w-6xl mx-auto">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <User className="w-5 h-5" />
