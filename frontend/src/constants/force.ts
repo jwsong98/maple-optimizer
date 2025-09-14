@@ -24,20 +24,20 @@ export const BOSS_FORCE_REQUIREMENTS = {
 export const FORCE_MULTIPLIERS = {
   // 아케인 포스 배율 (배수)
   Arcane: [
+    { value: 1.0, label: "1.0x" },
+    { value: 1.1, label: "1.1x" },
+    { value: 1.3, label: "1.3x" },
+    { value: 1.5, label: "1.5x" },
+  ],
+
+  // 어센틱 포스 배율 (곱셈)
+  Authentic: [
     { value: 0, label: "+0" },
     { value: 10, label: "+10" },
     { value: 20, label: "+20" },
     { value: 30, label: "+30" },
     { value: 40, label: "+40" },
     { value: 50, label: "+50" },
-  ],
-
-  // 어센틱 포스 배율 (곱셈)
-  Authentic: [
-    { value: 1.0, label: "1.0x" },
-    { value: 1.1, label: "1.1x" },
-    { value: 1.3, label: "1.3x" },
-    { value: 1.5, label: "1.5x" },
   ],
 } as const;
 

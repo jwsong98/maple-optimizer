@@ -29,7 +29,8 @@ export default function Home() {
 
         {/* Footer */}
         <footer className="mt-16 text-center text-gray-500">
-          <p>메이플스토리 심볼 최적화 계산기 - API 기반</p>
+          <p>메이플스토리 심볼 최적화 계산기</p>
+          <p>Data based on NEXON Open API</p>
         </footer>
       </div>
     </div>

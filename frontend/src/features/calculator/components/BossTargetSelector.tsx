@@ -165,8 +165,8 @@ export function BossTargetSelector({
             {selectedBossInfo && selectedMultiplier !== null && (
               <p className="mt-1 text-xs text-muted-foreground">
                 {forceType === 'Arcane' 
-                  ? `${selectedBossInfo.requiredForce} + ${selectedMultiplier} = ${targetForce}`
-                  : `${selectedBossInfo.requiredForce} × ${selectedMultiplier} = ${targetForce}`
+                  ? `${selectedBossInfo.requiredForce} x ${selectedMultiplier} = ${targetForce}`
+                  : `${selectedBossInfo.requiredForce} + ${selectedMultiplier} = ${targetForce}`
                 }
               </p>
             )}

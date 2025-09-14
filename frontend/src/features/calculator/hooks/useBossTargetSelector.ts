@@ -75,10 +75,10 @@ export const useBossTargetSelector = create<BossTargetSelectorState>((set, get) 
     if (!bossInfo) return;
 
     // 기본 배율 설정
-    const defaultMultiplier = forceType === 'Arcane' ? 0 : 1.0;
+    const defaultMultiplier = forceType === 'Authentic' ? 0 : 1.0;
 
     let calculatedForce: number;
-    if (forceType === 'Arcane') {
+    if (forceType === 'Authentic') {
       // 아케인포스: 기본 요구치 + 배율
       calculatedForce = bossInfo.requiredForce + defaultMultiplier;
     } else {
@@ -100,7 +100,7 @@ export const useBossTargetSelector = create<BossTargetSelectorState>((set, get) 
     if (!bossInfo || !state.forceType) return;
 
     let calculatedForce: number;
-    if (state.forceType === 'Arcane') {
+    if (state.forceType === 'Authentic') {
       // 아케인포스: 기본 요구치 + 배율
       calculatedForce = bossInfo.requiredForce + multiplier;
     } else {
