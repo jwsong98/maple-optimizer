@@ -31,9 +31,9 @@ export const useForceCalculator = create<ForceCalculatorState>((set, get) => ({
   selectBoss: (boss) => {
     // Determine force type by membership in configured lists
     let forceType: ForceType | null = null;
-    if ((BOSS_FORCE_TYPES.ARCANE as readonly string[]).includes(boss)) {
+    if ((BOSS_FORCE_TYPES.Arcane as readonly string[]).includes(boss)) {
       forceType = "Arcane";
-    } else if ((BOSS_FORCE_TYPES.AUTHENTIC as readonly string[]).includes(boss)) {
+    } else if ((BOSS_FORCE_TYPES.Authentic as readonly string[]).includes(boss)) {
       forceType = "Authentic";
     }
 
@@ -73,7 +73,7 @@ export const useForceCalculator = create<ForceCalculatorState>((set, get) => ({
       selectedBoss: null,
       calculatedForce: null,
       // Preload default multiplier for UX; won't apply until a boss is selected
-      selectedMultiplier: type === "ARCANE" ? 1.0 : 0,
+      selectedMultiplier: type === "Arcane" ? 1.0 : 0,
     });
   },
 

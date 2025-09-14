@@ -2,8 +2,8 @@ import { BOSS_FORCE_REQUIREMENTS, BOSS_FORCE_TYPES, FORCE_MULTIPLIERS } from "@/
 
 export type BossName = keyof typeof BOSS_FORCE_REQUIREMENTS;
 export type ForceType = keyof typeof FORCE_MULTIPLIERS;
-export type ARCANE_BossForceType = typeof BOSS_FORCE_TYPES["ARCANE"];
-export type AUTHENTIC_BossForceType = typeof BOSS_FORCE_TYPES["AUTHENTIC"];
+export type ARCANE_BossForceType = typeof BOSS_FORCE_TYPES["Arcane"];
+export type AUTHENTIC_BossForceType = typeof BOSS_FORCE_TYPES["Authentic"];
 
 export interface ForceMultiplier {
   value: number;
