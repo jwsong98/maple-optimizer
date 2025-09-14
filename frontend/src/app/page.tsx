@@ -20,6 +20,9 @@ export default function Home() {
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">
             캐릭터 정보를 조회하고 목표 포스에 도달하기 위한 최적의 심볼 업그레이드 경로를 계산하세요.
           </p>
+          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+            제대로 조회가 되지 않으면 새로고침 한 후 다시 시도해주세요.
+          </p>
         </div>
 
         {/* Main Content */}

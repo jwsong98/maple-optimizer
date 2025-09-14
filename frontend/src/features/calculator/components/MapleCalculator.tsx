@@ -37,14 +37,7 @@ type OptimizerForm = z.infer<typeof optimizerSchema>;
 export default function MapleCalculator() {
   const [characterName, setCharacterName] = useState('');
   const [searchedName, setSearchedName] = useState<string | null>(null);
-  const [characterData, setCharacterData] = useState<CharacterSymbolInfo | undefined>(undefined);
   const [optimizationResult, setOptimizationResult] = useState<ForceOptimizeResponse | null>(null);
-  const [savedForces, setSavedForces] = useState<{arcane: number, authentic: number}>({arcane: 0, authentic: 0});
-  const [savedSymbolLevels, setSavedSymbolLevels] = useState<{arcane: number[], authentic: number[]}>({
-    arcane: [1, 1, 1, 1, 1, 1],
-    authentic: [1, 1, 1, 1, 1, 1, 1]
-  });
-  const [savedExtraForces, setSavedExtraForces] = useState<{arcane: number, authentic: number}>({arcane: 0, authentic: 0});
   const [bossTargetCalculation, setBossTargetCalculation] = useState<BossTargetCalculation | null>(null);
   const [savedBossTargetCalculation, setSavedBossTargetCalculation] = useState<BossTargetCalculation | null>(null);
   const { toast } = useToast();
@@ -69,16 +62,12 @@ export default function MapleCalculator() {
       force_goal: 0,
       char_level: 275,
       current_force: 0,
-      symbol_levels: [1, 1, 1, 1, 1, 1],
+      symbol_levels: [0, 0, 0, 0, 0, 0],
       extra_force: 0,
     },
   });
 
-  const forceType = form.watch('force_type');
-  const symbolLevels = form.watch('symbol_levels');
-  const extraForce = form.watch('extra_force');
-
-  // Calculate symbol force from symbol levels only
+  // Utility functions for force calculations
   const calculateSymbolForce = React.useCallback((levels: number[], type: 'Arcane' | 'Authentic') => {
     return levels.reduce((total, level) => {
       if (type === 'Arcane') {
@@ -91,7 +80,40 @@ export default function MapleCalculator() {
     }, 0);
   }, []);
 
-  // Calculate total force including extra force
+  const calculateExtraForce = React.useCallback((totalForce: number, levels: number[], type: 'Arcane' | 'Authentic') => {
+    const symbolForce = calculateSymbolForce(levels, type);
+    return Math.max(0, totalForce - symbolForce);
+  }, [calculateSymbolForce]);
+
+  // ✨ Parse character data from react-query as single source of truth
+  const parsedCharacterData = React.useMemo(() => {
+    if (!characterQueryData?.data) return null;
+
+    const data = characterQueryData.data;
+    const arcaneSymbols = data.symbol_info.arcane_symbols.map(s => s.level);
+    const authenticSymbols = data.symbol_info.authentic_symbols.map(s => s.level);
+
+    return {
+      level: data.basic_info.level,
+      class: data.basic_info.class,
+      arcane: {
+        force: data.force_info.arcane_force,
+        levels: arcaneSymbols,
+        extra: calculateExtraForce(data.force_info.arcane_force, arcaneSymbols, 'Arcane'),
+      },
+      authentic: {
+        force: data.force_info.authentic_force,
+        levels: authenticSymbols,
+        extra: calculateExtraForce(data.force_info.authentic_force, authenticSymbols, 'Authentic'),
+      }
+    };
+  }, [characterQueryData, calculateExtraForce]);
+
+  const forceType = form.watch('force_type');
+  const symbolLevels = form.watch('symbol_levels');
+  const extraForce = form.watch('extra_force');
+
+  // Calculate total force including extra force from current form values
   const totalCurrentForce = React.useMemo(() => {
     const symbolForce = calculateSymbolForce(symbolLevels, forceType);
     return symbolForce + extraForce;
@@ -101,12 +123,6 @@ export default function MapleCalculator() {
   React.useEffect(() => {
     form.setValue('current_force', totalCurrentForce);
   }, [totalCurrentForce, form]);
-
-  // Helper function to calculate extra force from API data
-  const calculateExtraForce = React.useCallback((totalForce: number, levels: number[], type: 'Arcane' | 'Authentic') => {
-    const symbolForce = calculateSymbolForce(levels, type);
-    return Math.max(0, totalForce - symbolForce);
-  }, [calculateSymbolForce]);
 
   // Handle boss target calculation changes
   const handleBossTargetCalculationChange = React.useCallback((calculation: BossTargetCalculation) => {
@@ -162,64 +178,42 @@ export default function MapleCalculator() {
     }
   };
 
-  // Update character data when query succeeds
+  // ✨ Sync form with character data using form.reset for atomic updates
   React.useEffect(() => {
-    if (characterQueryData?.data) {
-      setCharacterData(characterQueryData.data);
+    if (parsedCharacterData) {
+      // Determine which force type has data
+      const hasArcaneData = parsedCharacterData.arcane.levels.length > 0;
+      const hasAuthenticData = parsedCharacterData.authentic.levels.length > 0;
       
-      // Auto-fill form with character data
-      const arcaneSymbols = characterQueryData.data.symbol_info.arcane_symbols.map(symbol => symbol.level);
-      const authenticSymbols = characterQueryData.data.symbol_info.authentic_symbols.map(symbol => symbol.level);
-
-      // Calculate extra forces from API data
-      const arcaneExtra = calculateExtraForce(
-        characterQueryData.data.force_info.arcane_force,
-        arcaneSymbols.slice(0, SYMBOL_CONFIG.ARCANE.COUNT),
-        'Arcane'
-      );
-      const authenticExtra = calculateExtraForce(
-        characterQueryData.data.force_info.authentic_force,
-        authenticSymbols.slice(0, SYMBOL_CONFIG.AUTHENTIC.COUNT),
-        'Authentic'
-      );
-
-      // Save force values and symbol levels from character data
-      setSavedForces({
-        arcane: characterQueryData.data.force_info.arcane_force,
-        authentic: characterQueryData.data.force_info.authentic_force
-      });
-
-      setSavedSymbolLevels({
-        arcane: arcaneSymbols.slice(0, SYMBOL_CONFIG.ARCANE.COUNT),
-        authentic: authenticSymbols.slice(0, SYMBOL_CONFIG.AUTHENTIC.COUNT)
-      });
-
-      setSavedExtraForces({
-        arcane: arcaneExtra,
-        authentic: authenticExtra
-      });
-
-      if (arcaneSymbols.length > 0) {
-        form.setValue('force_type', 'Arcane');
-        form.setValue('current_force', characterQueryData.data.force_info.arcane_force);
-        form.setValue('symbol_levels', arcaneSymbols.slice(0, SYMBOL_CONFIG.ARCANE.COUNT));
-        form.setValue('extra_force', arcaneExtra);
-        form.setValue('char_level', characterQueryData.data.basic_info.level);
-      } else if (authenticSymbols.length > 0) {
-        form.setValue('force_type', 'Authentic');
-        form.setValue('current_force', characterQueryData.data.force_info.authentic_force);
-        form.setValue('symbol_levels', authenticSymbols.slice(0, SYMBOL_CONFIG.AUTHENTIC.COUNT));
-        form.setValue('extra_force', authenticExtra);
-        form.setValue('char_level', characterQueryData.data.basic_info.level);
+      let targetForceType: 'Arcane' | 'Authentic' = forceType;
+      if (hasArcaneData && !hasAuthenticData) {
+        targetForceType = 'Arcane';
+      } else if (hasAuthenticData && !hasArcaneData) {
+        targetForceType = 'Authentic';
       }
 
-      // Restore saved boss target calculation after character data loads
-      if (savedBossTargetCalculation?.targetForce && savedBossTargetCalculation.targetForce > 0) {
-        // Set the target force back
-        form.setValue('force_goal', savedBossTargetCalculation.targetForce);
+      const currentTypeData = targetForceType === 'Arcane' 
+        ? parsedCharacterData.arcane 
+        : parsedCharacterData.authentic;
+
+      // Reset form with character data, preserving boss target if exists
+      const currentGoal = savedBossTargetCalculation?.targetForce || form.getValues('force_goal');
+      
+      form.reset({
+        force_type: targetForceType,
+        force_goal: currentGoal,
+        char_level: parsedCharacterData.level,
+        current_force: currentTypeData.force,
+        symbol_levels: currentTypeData.levels,
+        extra_force: currentTypeData.extra,
+      });
+
+      // Clear saved boss target after restoring
+      if (savedBossTargetCalculation) {
+        setSavedBossTargetCalculation(null);
       }
     }
-  }, [characterQueryData, form, calculateExtraForce, savedBossTargetCalculation]);
+  }, [parsedCharacterData, form, savedBossTargetCalculation]);
 
   // Handle character error
   React.useEffect(() => {
@@ -232,53 +226,39 @@ export default function MapleCalculator() {
     }
   }, [characterError, toast]);
 
-  // Update symbol levels array and force when force type changes
+  // ✨ Handle force type changes using parsed character data or defaults
   React.useEffect(() => {
-    if (forceType === 'Arcane') {
-      // Load saved arcane data or use defaults
-      form.setValue('current_force', savedForces.arcane);
-      form.setValue('symbol_levels', savedSymbolLevels.arcane);
-      form.setValue('extra_force', savedExtraForces.arcane);
-    } else if (forceType === 'Authentic') {
-      // Load saved authentic data or use defaults
-      form.setValue('current_force', savedForces.authentic);
-      form.setValue('symbol_levels', savedSymbolLevels.authentic);
-      form.setValue('extra_force', savedExtraForces.authentic);
-    }
-    
-    // Reset goal when force family changes, but preserve if character data is being loaded
-    const shouldResetGoal = form.getValues('force_goal') !== 0 && 
-                           !savedBossTargetCalculation && 
-                           !isCharacterLoading;
-    
-    if (shouldResetGoal) {
-      form.setValue('force_goal', 0);
-    }
-  }, [forceType, form, savedForces, savedSymbolLevels, savedExtraForces, savedBossTargetCalculation, isCharacterLoading]);
+    if (parsedCharacterData) {
+      // Character data is available, use it
+      const currentTypeData = forceType === 'Arcane' 
+        ? parsedCharacterData.arcane 
+        : parsedCharacterData.authentic;
 
-  // Helper function to save current form values to state
-  const saveCurrentValues = React.useCallback(() => {
-    const currentForce = form.getValues('current_force');
-    const currentLevels = form.getValues('symbol_levels');
-    const currentExtraForce = form.getValues('extra_force');
+      form.reset({
+        ...form.getValues(), // Preserve other values like force_goal
+        current_force: currentTypeData.force,
+        symbol_levels: currentTypeData.levels,
+        extra_force: currentTypeData.extra,
+      });
+    } else {
+      // No character data, use defaults
+      const defaultLevels = forceType === 'Arcane' 
+        ? [0, 0, 0, 0, 0, 0] 
+        : [0, 0, 0, 0, 0, 0, 0];
+      
+      form.reset({
+        ...form.getValues(),
+        current_force: 0,
+        symbol_levels: defaultLevels,
+        extra_force: 0,
+      });
 
-    if (forceType === 'Arcane') {
-      setSavedForces(prev => ({ ...prev, arcane: currentForce }));
-      setSavedSymbolLevels(prev => ({ ...prev, arcane: currentLevels }));
-      setSavedExtraForces(prev => ({ ...prev, arcane: currentExtraForce }));
-    } else if (forceType === 'Authentic') {
-      setSavedForces(prev => ({ ...prev, authentic: currentForce }));
-      setSavedSymbolLevels(prev => ({ ...prev, authentic: currentLevels }));
-      setSavedExtraForces(prev => ({ ...prev, authentic: currentExtraForce }));
+      // Reset goal when force family changes (only if no character data and no saved boss target)
+      if (!savedBossTargetCalculation && !isCharacterLoading) {
+        form.setValue('force_goal', 0);
+      }
     }
-  }, [forceType, form]);
-
-  // Save values when component unmounts or forceType changes
-  React.useEffect(() => {
-    return () => {
-      saveCurrentValues();
-    };
-  }, [saveCurrentValues]);
+  }, [forceType, parsedCharacterData, form, savedBossTargetCalculation, isCharacterLoading]);
 
   const onSubmitOptimization = (data: OptimizerForm) => {
     if (!bossTargetCalculation?.targetForce || bossTargetCalculation.targetForce <= 0) {
@@ -330,7 +310,7 @@ export default function MapleCalculator() {
             </Button>
           </div>
 
-          {characterData && (
+          {parsedCharacterData && (
             <div className="space-y-6 mt-6">
               <Separator />
               
@@ -340,7 +320,7 @@ export default function MapleCalculator() {
                   <CardContent className="p-4 text-center">
                     <User className="w-6 h-6 mx-auto mb-2 text-blue-500" />
                     <div className="text-sm text-gray-600 mb-1">직업</div>
-                    <div className="font-bold">{characterData.basic_info.class}</div>
+                    <div className="font-bold">{parsedCharacterData.class}</div>
                   </CardContent>
                 </Card>
                 
@@ -348,7 +328,7 @@ export default function MapleCalculator() {
                   <CardContent className="p-4 text-center">
                     <Star className="w-6 h-6 mx-auto mb-2 text-yellow-500" />
                     <div className="text-sm text-gray-600 mb-1">레벨</div>
-                    <div className="font-bold">{characterData.basic_info.level}</div>
+                    <div className="font-bold">{parsedCharacterData.level}</div>
                   </CardContent>
                 </Card>
 
@@ -357,7 +337,7 @@ export default function MapleCalculator() {
                     <Zap className="w-6 h-6 mx-auto mb-2 text-purple-500" />
                     <div className="text-sm text-gray-600 mb-1">아케인포스</div>
                     <div className="font-bold text-purple-600">
-                      {characterData.force_info.arcane_force.toLocaleString()}
+                      {parsedCharacterData.arcane.force.toLocaleString()}
                     </div>
                   </CardContent>
                 </Card>
@@ -367,7 +347,7 @@ export default function MapleCalculator() {
                     <Shield className="w-6 h-6 mx-auto mb-2 text-blue-500" />
                     <div className="text-sm text-gray-600 mb-1">어센틱포스</div>
                     <div className="font-bold text-blue-600">
-                      {characterData.force_info.authentic_force.toLocaleString()}
+                      {parsedCharacterData.authentic.force.toLocaleString()}
                     </div>
                   </CardContent>
                 </Card>
