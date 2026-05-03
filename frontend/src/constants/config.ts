@@ -96,7 +96,7 @@ export const BOSS_TARGETS = {
     { name: 'NORMAL 진 힐라', target: 820 },
     { name: 'HARD 진 힐라', target: 900 },
     { name: 'NORMAL 듄켈', target: 850 },
-    { name: 'HARD 듄켈', target: 1380 },
+    { name: 'HARD 듄켈', target: 850 },
     { name: 'HARD 검은 마법사', target: 1320 },
     { name: 'EXTREME 검은 마법사', target: 1320 },
   ],

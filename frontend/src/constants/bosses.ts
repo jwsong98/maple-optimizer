@@ -18,7 +18,7 @@ export const BOSS_LIST: BossInfo[] = [
   { name: '진 힐라', difficulty: 'NORMAL', forceType: 'Arcane', requiredForce: 820 },
   { name: '진 힐라', difficulty: 'HARD', forceType: 'Arcane', requiredForce: 900 },
   { name: '듄켈', difficulty: 'NORMAL', forceType: 'Arcane', requiredForce: 850 },
-  { name: '듄켈', difficulty: 'HARD', forceType: 'Arcane', requiredForce: 1380 },
+  { name: '듄켈', difficulty: 'HARD', forceType: 'Arcane', requiredForce: 850 },
   { name: '검은 마법사', difficulty: 'HARD', forceType: 'Arcane', requiredForce: 1320 },
   { name: '검은 마법사', difficulty: 'EXTREME', forceType: 'Arcane', requiredForce: 1320 },
 
