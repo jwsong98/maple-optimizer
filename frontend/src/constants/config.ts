@@ -21,7 +21,7 @@ export const SYMBOL_CONFIG = {
     ],
   },
   AUTHENTIC: {
-    COUNT: 7,
+    COUNT: 8,
     MAX_LEVEL: 11,
     NAMES: [
       '세르니움',
@@ -31,6 +31,7 @@ export const SYMBOL_CONFIG = {
       '아르테리아',
       '카르시온',
       '탈라하트',
+      '기어드락',
     ],
   },
 } as const;
@@ -54,6 +55,7 @@ export const SYMBOL_NAME_MAP = {
   '어센틱심볼 : 아르테리아': '아르테리아',
   '어센틱심볼 : 카르시온': '카르시온',
   '그랜드 어센틱심볼 : 탈라하트': '탈라하트',
+  '그랜드 어센틱심볼 : 기어드락': '기어드락',
 } as const;
 
 // Symbol icon mapping
@@ -71,6 +73,8 @@ export const SYMBOL_ICON_MAP = {
   '어센틱심볼 : 아르테리아': 'https://open.api.nexon.com/static/maplestory/item/icon/KEIDIHOF',
   '어센틱심볼 : 카르시온': 'https://open.api.nexon.com/static/maplestory/item/icon/KEIDIHOE',
   '어센틱심볼 : 탈라하트': 'https://open.api.nexon.com/static/maplestory/item/icon/KEIDPHOB',
+  '어센틱심볼 : 기어드락': '/images/geardlock-symbol.png',
+  '그랜드 어센틱심볼 : 기어드락': '/images/geardlock-symbol.png',
   // // 추가 심볼들
   // '어센틱심볼 : 셀라스': 'https://open.api.nexon.com/static/maplestory/item/icon/KEIDIHOG',
   // '어센틱심볼 : 문브릿지': 'https://open.api.nexon.com/static/maplestory/item/icon/KEIDIHOH',
@@ -112,9 +116,13 @@ export const BOSS_TARGETS = {
     { name: 'NORMAL 카링', target: 330 },
     { name: 'HARD 카링', target: 350 },
     { name: 'EXTREME 카링', target: 480 },
+    { name: 'NORMAL 찬란한 흉성', target: 400 },
+    { name: 'HARD 찬란한 흉성', target: 550 },
     { name: 'NORMAL 림보', target: 500 },
     { name: 'HARD 림보', target: 500 },
     { name: 'NORMAL 발드릭스', target: 700 },
     { name: 'HARD 발드릭스', target: 700 },
+    { name: 'NORMAL 유피테르', target: 810 },
+    { name: 'HARD 유피테르', target: 810 },
   ],
 } as const;

@@ -188,7 +188,7 @@ export default function CharacterLookup({ onCharacterFound }: CharacterLookupPro
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-6">
-                <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-7 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-8 gap-4">
                   {characterData.data.symbol_info.authentic_symbols.map((symbol: SymbolItem) => (
                     <div key={symbol.name} className="text-center">
                       <div className="w-16 h-16 mx-auto mb-2 bg-blue-100 rounded-lg flex items-center justify-center">

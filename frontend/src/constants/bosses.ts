@@ -38,8 +38,12 @@ export const BOSS_LIST: BossInfo[] = [
   { name: '카링', difficulty: 'NORMAL', forceType: 'Authentic', requiredForce: 330 },
   { name: '카링', difficulty: 'HARD', forceType: 'Authentic', requiredForce: 350 },
   { name: '카링', difficulty: 'EXTREME', forceType: 'Authentic', requiredForce: 480 },
+  { name: '찬란한 흉성', difficulty: 'NORMAL', forceType: 'Authentic', requiredForce: 400 },
+  { name: '찬란한 흉성', difficulty: 'HARD', forceType: 'Authentic', requiredForce: 550 },
   { name: '림보', difficulty: 'NORMAL', forceType: 'Authentic', requiredForce: 500 },
   { name: '림보', difficulty: 'HARD', forceType: 'Authentic', requiredForce: 500 },
   { name: '발드릭스', difficulty: 'NORMAL', forceType: 'Authentic', requiredForce: 700 },
   { name: '발드릭스', difficulty: 'HARD', forceType: 'Authentic', requiredForce: 700 },
+  { name: '유피테르', difficulty: 'NORMAL', forceType: 'Authentic', requiredForce: 810 },
+  { name: '유피테르', difficulty: 'HARD', forceType: 'Authentic', requiredForce: 810 },
 ];

@@ -28,7 +28,7 @@ const optimizerSchema = z.object({
   force_goal: z.number().min(1, '목표 포스는 1 이상이어야 합니다'),
   char_level: z.number().min(200, '캐릭터 레벨은 200 이상이어야 합니다'),
   current_force: z.number().min(0, '현재 포스는 0 이상이어야 합니다'),
-  symbol_levels: z.array(z.number().min(0)).min(6).max(7),
+  symbol_levels: z.array(z.number().min(0)).min(6).max(8),
   extra_force: z.number().min(0, '추가 포스는 0 이상이어야 합니다'),
 });
 
@@ -244,7 +244,7 @@ export default function MapleCalculator() {
       // No character data, use defaults
       const defaultLevels = forceType === 'Arcane' 
         ? [0, 0, 0, 0, 0, 0] 
-        : [0, 0, 0, 0, 0, 0, 0];
+        : [0, 0, 0, 0, 0, 0, 0, 0];
       
       form.reset({
         ...form.getValues(),

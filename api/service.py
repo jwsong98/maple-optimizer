@@ -14,7 +14,7 @@ class MapleService:
     def _load_force_cost_tables(self):
         """아케인/어센틱 포스 비용 테이블 로드"""
         self.arcane_regions = ['Yuro', 'ChewChew', 'Lecheln', 'Arcana', 'Morass', 'Esfera']
-        self.authentic_regions = ['Cernium', 'Arcs', 'Odium', 'Dowonkyung', 'Arteria', 'Carcion', 'Tallahart']
+        self.authentic_regions = ['Cernium', 'Arcs', 'Odium', 'Dowonkyung', 'Arteria', 'Carcion', 'Tallahart', 'Gearlock']
 
         # 비용 테이블 초기화
         self.arcane_cost_dict = {region: [] for region in self.arcane_regions}
@@ -93,7 +93,8 @@ class MapleService:
             "어센틱심볼 : 도원경": 0,
             "어센틱심볼 : 아르테리아": 0,
             "어센틱심볼 : 카르시온": 0,
-            "그랜드 어센틱심볼 : 탈라하트": 0
+            "그랜드 어센틱심볼 : 탈라하트": 0,
+            "그랜드 어센틱심볼 : 기어드락": 0
         }
 
         try:
@@ -195,6 +196,12 @@ class MapleService:
                     "level": 0,
                     "icon": "",
                     "description": "탈라하트에서 획득 가능한 그랜드 어센틱심볼"
+                },
+                {
+                    "name": "그랜드 어센틱심볼 : 기어드락",
+                    "level": 0,
+                    "icon": "",
+                    "description": "기어드락에서 획득 가능한 그랜드 어센틱심볼"
                 }
             ]
 
@@ -255,8 +262,8 @@ class MapleService:
             thresholds = [200, 210, 220, 225, 230, 235]
             region_count = 6
         else:  # Authentic
-            thresholds = [260, 265, 270, 275, 280, 285, 290]
-            region_count = 7
+            thresholds = [260, 265, 270, 275, 280, 285, 290, 295]
+            region_count = 8
 
         return [1 if char_level >= th else 0 for th in thresholds[:region_count]]
 

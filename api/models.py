@@ -26,17 +26,17 @@ class ForceOptimizeRequest(BaseModel):
         ge=0
     )
     symbol_levels: List[int] = Field(
-        description="현재 심볼 레벨 리스트 (아케인: 6개, 어센틱: 7개)",
+        description="현재 심볼 레벨 리스트 (아케인: 6개, 어센틱: 8개)",
         min_items=6,
-        max_items=7
+        max_items=8
     )
 
     def validate_symbol_levels(self):
         """심볼 레벨 리스트 검증"""
         if self.force_type == ForceType.ARCANE and len(self.symbol_levels) != 6:
             raise ValueError("아케인심볼은 6개의 레벨이 필요합니다")
-        if self.force_type == ForceType.AUTHENTIC and len(self.symbol_levels) != 7:
-            raise ValueError("어센틱심볼은 7개의 레벨이 필요합니다")
+        if self.force_type == ForceType.AUTHENTIC and len(self.symbol_levels) != 8:
+            raise ValueError("어센틱심볼은 8개의 레벨이 필요합니다")
         
         max_level = 20 if self.force_type == ForceType.ARCANE else 11
         if any(level < 0 or level > max_level for level in self.symbol_levels):
